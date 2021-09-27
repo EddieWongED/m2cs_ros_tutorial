@@ -22,6 +22,8 @@ if __name__ == "__main__":
 
         # rospy.wait_for_service('calc')
 
+        rospy.wait_for_service('calc')
+        
         resp = calc_client(req)
 
         # resp = calc_client(a, b)
