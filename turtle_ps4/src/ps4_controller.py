@@ -3,6 +3,7 @@ import rospy
 from geometry_msgs.msg import Twist
 from turtlesim.srv import *
 from m2_ps4.msg import *
+from std_srvs.srv import *
 
 # roscore
 # rosrun turtlesim turtlesim_node
@@ -21,12 +22,17 @@ from m2_ps4.msg import *
 # Service: /turtle1/set_pen
 # Type: SetPen
 
+# Client:
+# Service: /clear
+# Type: Empty
+
 pen_color_r = 179
 pen_color_g = 184
 pen_color_b = 255
 DEFAULT_PEN_WIDTH = 3
 
 pen_client = rospy.ServiceProxy("turtle1/set_pen", SetPen)
+clear_client = rospy.ServiceProxy("clear", Empty)
 old_data = Ps4Data()
 twist = Twist()
 speed_level = 1
@@ -87,7 +93,7 @@ def callback(data):
                      DEFAULT_PEN_WIDTH, not(pen_on))
 
     # Set Pen On/Off
-    if (data.ps and not(old_data.ps)):
+    if (data.options and not(old_data.options)):
         pen_on = not(pen_on)
         send_pen_req(pen_color_r, pen_color_g, pen_color_b,
                      DEFAULT_PEN_WIDTH, not(pen_on))
@@ -95,6 +101,13 @@ def callback(data):
             rospy.loginfo("Pen is on")
         else:
             rospy.loginfo("Pen is off")
+
+    # Clear Background
+    if (data.ps and not(old_data.ps)):
+        clear_req = EmptyRequest()
+        rospy.wait_for_service("turtle1/set_pen")
+        clear_resp = clear_client(clear_req)
+        rospy.loginfo("Background is clear")
 
     # Toward / Backward
     twist.linear.x = data.hat_ly * speed_level

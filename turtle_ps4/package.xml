@@ -58,7 +58,7 @@
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>turtlesim</build_export_depend>
-  <exec_depend>m2_ps4</exec_depend>
+  <build_export_depend>m2_ps4</build_export_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
