@@ -132,4 +132,4 @@ if __name__ == '__main__':
 
     rospy.spin()
 
-    print("node ps4_controller terminated")
+    rospy.loginfo("Node ps4_controller terminated")

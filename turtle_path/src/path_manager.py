@@ -1,9 +1,29 @@
 #!/usr/bin/env python
 import rospy
-from math import pi, fmod, sin, cos, sqrt
+from math import pi, sin, cos, sqrt
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 from turtle_path.srv import *
+
+# roscore
+# rosrun turtlesim turtlesim_node
+# rosrun turtle_path path_manager.py
+
+# Subscribe:
+# Topic: /turtle1/pose
+# Type: Post
+
+# Publish:
+# Topic: /turtle1/cmd_vel
+# Type: Twist
+
+# Server:
+# Service: /set_orientation
+# Type: SetOrientation
+
+# Server:
+# Service: /walk_distance
+# Type: WalkDistance
 
 cur_pos = Pose()
 
@@ -15,34 +35,47 @@ def cb_pose(data):
 
 def cb_walk(req):
     if (req.distance < 0):
-        return False
+        resp = WalkDistanceResponse()
+        resp.success = False
+        rospy.loginfo("Negative distance is not accepted")
+        return resp
 
-    # hint: calculate the projected (x, y) after walking the distance,
-    # and return false if it is outside the boundary
+    target_x = cur_pos.x + req.distance * cos(cur_pos.theta)
+    target_y = cur_pos.y + req.distance * sin(cur_pos.theta)
 
-    rate = rospy.Rate(100)  # 100Hz control loop
+    if (target_x < 0 or target_x > 11 or target_y < 0 or target_y > 11):
+        resp = WalkDistanceResponse()
+        resp.success = False
+        rospy.loginfo("Target is out of the boundary")
+        return resp
 
-    while ('''goal not reached'''):  # control loop
+    rate = rospy.Rate(100)
 
-        # in each iteration of the control loop, publish a velocity
+    distance_diff = req.distance
 
-        # hint: you need to use the formula for distance between two points
+    while (abs(distance_diff) > 0.005):
+        twist = Twist()
+        twist.linear.x = distance_diff * 10
+        pub.publish(twist)
+
+        distance_diff = sqrt((target_x - cur_pos.x) ** 2 +
+                             (target_y - cur_pos.y) ** 2)
 
         rate.sleep()
 
-    vel = Twist()  # publish a velocity 0 at the end, to ensure the turtle really stops
-    pub.publish(vel)
+    twist = Twist()
+    pub.publish(twist)
 
-    return True
+    resp = WalkDistanceResponse()
+    resp.success = True
+    rospy.loginfo("Target reached")
+    return resp
 
 
 def cb_orientation(req):
     rate = rospy.Rate(100)
 
-    rospy.loginfo(cur_pos.theta)
-    rospy.loginfo(req.theta)
-
-    theta_diff = req.theta - cur_pos.theta
+    theta_diff = req.orientation - cur_pos.theta
     if (theta_diff > pi):
         theta_diff -= 2 * pi
     elif (theta_diff < -pi):
@@ -54,13 +87,13 @@ def cb_orientation(req):
         resp.success = False
         return resp
     else:
-        while (theta_diff != 0):  # control loop
+        while (abs(theta_diff) > 0.005):  # control loop
 
             twist = Twist()
             twist.angular.z = theta_diff * 10
             pub.publish(twist)
 
-            theta_diff = req.theta - cur_pos.theta
+            theta_diff = req.orientation - cur_pos.theta
             if (theta_diff > pi):
                 theta_diff -= 2 * pi
             elif (theta_diff < -pi):
@@ -87,11 +120,13 @@ if __name__ == '__main__':
     rospy.Service('set_orientation', SetOrientation, cb_orientation)
     rospy.loginfo("Service /set_orientation is ready")
 
+    # Hosting service /set_orientation
+    rospy.Service('walk_distance', WalkDistance, cb_walk)
+    rospy.loginfo("Service /walk_distance is ready")
+
     # Publishing velocity to /turtle1/cmd_vel
     pub = rospy.Publisher("/turtle1/cmd_vel", Twist, queue_size=1)
 
-    # init each service server here:
-    # rospy.Service( ... )		# callback to cb_orientation
-    # rospy.Service( ... )		# callback to cb_walk
-
     rospy.spin()
+
+    rospy.loginfo("Node path_manager terminated")

@@ -59,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   SetOrientation.srv
+  WalkDistance.srv
 )
 
 ## Generate actions in the 'action' folder
